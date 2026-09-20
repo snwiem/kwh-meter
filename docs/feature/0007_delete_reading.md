@@ -6,7 +6,7 @@ Ready
 
 ## Summary
 
-A user can delete an existing kWh reading from the detail view. Tapping the Delete action button on the detail page opens a confirmation modal. The user must explicitly confirm before the record is permanently deleted.
+A user can permanently delete an existing kWh reading from the detail view. Tapping the Delete action button on the detail page opens a simple confirmation modal. The user must explicitly confirm before the record is deleted.
 
 ## Trigger
 
@@ -14,22 +14,30 @@ A user can delete an existing kWh reading from the detail view. Tapping the Dele
 
 ## Confirmation Modal
 
-The modal displays:
+A minimal modal asking a plain yes/no question:
 
-- A warning message, e.g.:
-  > **Eintrag löschen?**
-  > Dieser Eintrag wird unwiderruflich gelöscht und kann nicht wiederhergestellt werden (außer über einen Export-Backup).
-- Two buttons:
-  - **Löschen** (confirm delete) — styled as a destructive/danger action
-  - **Abbrechen** (cancel) — returns to the detail page without changes
+- Question: **"Wirklich löschen?"**
+- No record details, no irreversibility explanation — kept deliberately simple.
+- Two answer buttons:
+  - **Ja** (confirm) — styled as a destructive/danger action
+  - **Nein** (cancel)
 
 ## Behavior
 
-- On confirm: sends `DELETE /api/readings/:id`, then navigates back to the main screen.
-- On cancel: closes the modal, stays on the detail page.
-- If the API call fails, an error message is shown inside the modal. The record is not removed.
+- On **Ja**:
+  - Sends `DELETE /api/readings/:id`.
+  - On success: navigates back to the main screen.
+  - On failure (404 or server error): closes the modal and shows the error message at the top of the detail page.
+- On **Nein**:
+  - Closes the modal; stays on the detail page with no changes.
+
+## Backend
+
+- `DELETE /api/readings/{id}` endpoint:
+  - 404 if the record does not exist or belongs to a different meter.
+  - 204 No Content on success.
 
 ## Notes
 
 - The destructive nature of this operation (no trash/undo) justifies the mandatory confirmation step.
-- The confirmation modal must clearly communicate that the action is irreversible.
+- The confirmation is intentionally minimal — a bare "Are you sure?" with Ja/Nein answers and no extra context.
