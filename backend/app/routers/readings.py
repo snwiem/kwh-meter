@@ -20,28 +20,42 @@ router = APIRouter(prefix="/api/readings", tags=["readings"])
 async def get_neighbours(
     timestamp: datetime,
     request: Request,
+    exclude_id: int | None = None,
     session: AsyncSession = Depends(get_session),
 ) -> ReadingNeighbours:
     """Return the nearest reading before and after the given timestamp."""
     zaehler_nr: str = request.app.state.active_zaehler_nr
-    return await _fetch_neighbours(session, zaehler_nr, timestamp)
+    return await _fetch_neighbours(session, zaehler_nr, timestamp, exclude_id)
 
 
 async def _fetch_neighbours(
-    session: AsyncSession, zaehler_nr: str, timestamp: datetime
+    session: AsyncSession,
+    zaehler_nr: str,
+    timestamp: datetime,
+    exclude_id: int | None = None,
 ) -> ReadingNeighbours:
-    """Fetch the immediately preceding and following readings for a timestamp."""
+    """Fetch the immediately preceding and following readings for a timestamp.
+
+    When ``exclude_id`` is provided, that reading is left out of the result so
+    it is not treated as its own neighbour.
+    """
+    prev_conditions = [Reading.zaehler_nr == zaehler_nr, Reading.timestamp < timestamp]
+    if exclude_id is not None:
+        prev_conditions.append(Reading.id != exclude_id)
     prev_result = await session.execute(
         select(Reading)
-        .where(Reading.zaehler_nr == zaehler_nr, Reading.timestamp < timestamp)
+        .where(*prev_conditions)
         .order_by(Reading.timestamp.desc())
         .limit(1)
     )
     prev = prev_result.scalar_one_or_none()
 
+    next_conditions = [Reading.zaehler_nr == zaehler_nr, Reading.timestamp > timestamp]
+    if exclude_id is not None:
+        next_conditions.append(Reading.id != exclude_id)
     next_result = await session.execute(
         select(Reading)
-        .where(Reading.zaehler_nr == zaehler_nr, Reading.timestamp > timestamp)
+        .where(*next_conditions)
         .order_by(Reading.timestamp.asc())
         .limit(1)
     )
@@ -153,5 +167,58 @@ async def get_reading(
     
     if reading is None:
         raise HTTPException(status_code=404, detail="Reading not found")
-        
+
+    return ReadingOut.model_validate(reading)
+
+
+@router.put("/{id}", response_model=ReadingOut)
+async def update_reading(
+    id: int,
+    body: ReadingCreate,
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+) -> ReadingOut:
+    """Update an existing reading by its ID."""
+    zaehler_nr: str = request.app.state.active_zaehler_nr
+
+    result = await session.execute(
+        select(Reading)
+        .where(Reading.id == id, Reading.zaehler_nr == zaehler_nr)
+    )
+    reading = result.scalar_one_or_none()
+
+    if reading is None:
+        raise HTTPException(status_code=404, detail="Reading not found")
+
+    # Validate value fits between neighbouring readings, excluding the reading itself
+    neighbours = await _fetch_neighbours(
+        session, zaehler_nr, body.timestamp, exclude_id=id
+    )
+    if neighbours.previous is not None and body.value_kwh < Decimal(
+        str(neighbours.previous.value_kwh)
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Wert muss mindestens {neighbours.previous.value_kwh} kWh betragen "
+                f"(vorherige Ablesung)."
+            ),
+        )
+    if neighbours.next is not None and body.value_kwh > Decimal(
+        str(neighbours.next.value_kwh)
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Wert darf höchstens {neighbours.next.value_kwh} kWh betragen "
+                f"(nächste Ablesung)."
+            ),
+        )
+
+    reading.timestamp = body.timestamp
+    reading.value_kwh = body.value_kwh
+    reading.comment = body.comment
+
+    await session.commit()
+    await session.refresh(reading)
     return ReadingOut.model_validate(reading)

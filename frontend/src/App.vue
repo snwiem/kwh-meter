@@ -33,7 +33,11 @@ function navigate(to: string) {
 }
 
 function goBack() {
-  router.push('/')
+  if (isEditPage.value) {
+    router.push(`/readings/${route.params.id}`)
+  } else {
+    router.push('/')
+  }
 }
 
 function editReading() {
