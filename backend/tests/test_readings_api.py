@@ -88,6 +88,56 @@ async def test_list_readings_sorted_newest_first(test_client: AsyncClient) -> No
 
 
 @pytest.mark.asyncio
+async def test_create_reading_below_previous_rejected(test_client: AsyncClient) -> None:
+    """A value lower than the previous reading's value must be rejected."""
+    await test_client.post("/api/readings", json={**VALID_PAYLOAD, "timestamp": "2024-01-01T08:00:00+00:00", "value_kwh": 1000.0})
+    payload = {**VALID_PAYLOAD, "timestamp": "2024-06-01T10:00:00+00:00", "value_kwh": 999.0}
+    response = await test_client.post("/api/readings", json=payload)
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_reading_above_next_rejected(test_client: AsyncClient) -> None:
+    """A value higher than the following reading's value must be rejected."""
+    await test_client.post("/api/readings", json={**VALID_PAYLOAD, "timestamp": "2024-12-01T10:00:00+00:00", "value_kwh": 2000.0})
+    payload = {**VALID_PAYLOAD, "timestamp": "2024-06-01T10:00:00+00:00", "value_kwh": 2500.0}
+    response = await test_client.post("/api/readings", json=payload)
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_reading_equal_to_previous_allowed(test_client: AsyncClient) -> None:
+    """A value equal to the previous reading is valid (meter didn't change)."""
+    await test_client.post("/api/readings", json={**VALID_PAYLOAD, "timestamp": "2024-01-01T08:00:00+00:00", "value_kwh": 1000.0})
+    payload = {**VALID_PAYLOAD, "timestamp": "2024-06-01T10:00:00+00:00", "value_kwh": 1000.0}
+    response = await test_client.post("/api/readings", json=payload)
+    assert response.status_code == 201
+
+
+@pytest.mark.asyncio
+async def test_get_neighbours_returns_correct_readings(test_client: AsyncClient) -> None:
+    """GET /api/readings/neighbours returns the readings directly before and after the timestamp."""
+    await test_client.post("/api/readings", json={**VALID_PAYLOAD, "timestamp": "2024-01-01T08:00:00+00:00", "value_kwh": 100.0})
+    await test_client.post("/api/readings", json={**VALID_PAYLOAD, "timestamp": "2024-12-01T08:00:00+00:00", "value_kwh": 500.0})
+
+    response = await test_client.get("/api/readings/neighbours?timestamp=2024-06-01T10:00:00%2B00:00")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["previous"]["value_kwh"] == 100.0
+    assert data["next"]["value_kwh"] == 500.0
+
+
+@pytest.mark.asyncio
+async def test_get_neighbours_no_neighbours(test_client: AsyncClient) -> None:
+    """Returns null for both when no readings exist."""
+    response = await test_client.get("/api/readings/neighbours?timestamp=2024-06-01T10:00:00%2B00:00")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["previous"] is None
+    assert data["next"] is None
+
+
+@pytest.mark.asyncio
 async def test_list_readings_pagination(test_client: AsyncClient) -> None:
     """Page 2 returns the correct items when there are more than page_size readings."""
     # Insert 12 readings
