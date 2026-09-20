@@ -2,29 +2,50 @@
 
 ## Status
 
-Deferred — out of scope for MVP.
+Ready — replacing the previously defined modal overlay approach.
 
 ## Summary
 
-When a user clicks on a reading entry in the main screen list, a modal overlay opens showing the full details of that record in read-only mode.
+When a user taps or clicks on a reading entry in the main screen list, the app navigates to a dedicated detail page (not a modal overlay) showing the full details of that record in read-only mode.
 
 ## Trigger
 
-- Clicking anywhere on a row in the readings list on the main screen opens the overlay.
-- The comment icon (visible when a comment exists) is also clickable and opens the same overlay.
+- Tapping or clicking anywhere on a row in the readings list navigates to the detail page.
 
-## Overlay content
+## Detail Page Content
 
-The overlay displays all fields of the selected reading:
+The page displays all fields of the selected reading:
 
-| Field     | Description                              |
-|-----------|------------------------------------------|
-| Date/Time | Timestamp in German format `DD.MM.YYYY HH:MM` |
-| Value     | The kWh value with unit (kWh)            |
-| Comment   | The full comment text (if present)       |
+| Field     | Description                                    |
+|-----------|------------------------------------------------|
+| Date/Time | Timestamp in German format `DD.MM.YYYY HH:MM`  |
+| Value     | The kWh value with unit (kWh)                  |
+| Comment   | The full comment text (if present)             |
+
+## Top Bar Actions
+
+The detail page top bar includes two action buttons:
+
+| Action | Icon       | Behavior                                     |
+|--------|------------|----------------------------------------------|
+| Edit   | Pencil/Edit | Navigate to the edit view for this record    |
+| Delete | Trash/Delete | Open delete confirmation modal               |
 
 ## Behavior
 
-- The overlay is **read-only** — no editing is possible from here.
-- The overlay can be dismissed by clicking outside it or a close button.
-- No navigation away from the main screen occurs.
+- The page is **read-only** — no inline editing.
+- A back button in the top bar (or browser back gesture) returns to the main screen.
+- The URL route contains the record ID, e.g. `/readings/:id`.
+
+## Navigation Flow
+
+```
+Main Screen → (tap row) → Detail Page → (tap Edit) → Edit View
+                                      → (tap Delete) → Confirmation Modal → (confirm) → Main Screen
+                                                                           → (cancel) → back to Detail Page
+```
+
+## Notes
+
+- This replaces the previously defined modal overlay approach (see ADR if recorded).
+- The edit and delete features are defined separately in feature docs 0006 and 0007.
