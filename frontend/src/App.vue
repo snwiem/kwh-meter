@@ -1,9 +1,23 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
 const menuOpen = ref(false)
+const zaehlerNr = ref<string>('')
+
+onMounted(async () => {
+  try {
+    const res = await fetch('/api/meter')
+    if (res.ok) {
+      const data = await res.json()
+      zaehlerNr.value = data.zaehler_nr
+    }
+  } catch {
+    // non-critical — top bar degrades gracefully
+  }
+})
 
 function navigate(to: string) {
   menuOpen.value = false
@@ -15,8 +29,19 @@ function navigate(to: string) {
   <div class="app-shell">
     <!-- Global top bar -->
     <div class="top-bar">
-      <span class="app-title">⚡ kWh Meter</span>
-      <button class="burger-btn" aria-label="Menü öffnen" @click="menuOpen = true">☰</button>
+      <span class="zaehler-label" :title="zaehlerNr">
+        {{ zaehlerNr || '…' }}
+      </span>
+      <div class="top-bar-actions">
+        <!-- Show + only on main screen -->
+        <button
+          v-if="route.path === '/'"
+          class="add-btn"
+          aria-label="Neue Ablesung hinzufügen"
+          @click="router.push('/add')"
+        >+</button>
+        <button class="burger-btn" aria-label="Menü öffnen" @click="menuOpen = true">☰</button>
+      </div>
     </div>
 
     <!-- Slide-in overlay menu -->
@@ -69,12 +94,41 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
+  gap: 0.5rem;
 }
 
-.app-title {
+.zaehler-label {
+  font-size: 0.9rem;
+  font-family: monospace;
+  opacity: 0.9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.top-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.add-btn {
+  background: #fff;
+  color: #1a1a2e;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.3rem;
   font-weight: 700;
-  font-size: 1rem;
-  letter-spacing: 0.02em;
+  line-height: 1;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+}
+
+.add-btn:hover {
+  background: #e8e8e8;
 }
 
 .burger-btn {
@@ -83,7 +137,7 @@ body {
   color: #fff;
   font-size: 1.4rem;
   cursor: pointer;
-  padding: 0.1rem 0.4rem;
+  padding: 0.1rem 0.3rem;
   line-height: 1;
 }
 
