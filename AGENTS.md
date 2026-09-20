@@ -42,6 +42,10 @@ Contains feature and requirements definitions as simple Markdown files. Each fil
 - Files are written in plain Markdown and focus on *what* is needed, not *how* it is implemented.
 - New features should always get a corresponding file here before implementation begins.
 
+## docs/domain-concept.md
+
+A single document describing the core domain objects, their meaning, attributes, and relationships. It is the authoritative reference for domain terminology used across feature files, ADRs, and source code. Keep it up to date as the domain model evolves.
+
 ## docs/adr/
 
 Contains Architecture Decision Records (ADRs) — documents that capture significant design decisions that directly affect the architecture and source code.
