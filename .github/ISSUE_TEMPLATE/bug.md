@@ -2,7 +2,7 @@
 name: Bug
 about: Something is broken or behaving incorrectly
 title: 'fix: '
-labels: 'type:bug,status:ready'
+labels: 'type:bug'
 ---
 
 ## Summary

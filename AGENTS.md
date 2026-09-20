@@ -46,8 +46,9 @@ Every issue must have at least one label from each relevant axis:
 |---|---|
 | **Type** | `type:feature`, `type:bug`, `type:chore`, `type:documentation` |
 | **Scope** | `scope:frontend`, `scope:backend`, `scope:database`, `scope:infra` |
-| **Status** | `status:ready`, `status:in-progress`, `status:blocked`, `status:review` |
 | **Priority** | `priority:high`, `priority:low` |
+
+Workflow state (Backlog, Ready, In Progress, In Review, Done) is tracked exclusively via the **project board Status field** — not via labels.
 
 ### Milestone
 
@@ -74,10 +75,9 @@ Every issue must have at least one label from each relevant axis:
 
 - Before starting work on an issue, an agent must:
   1. Assign itself to the issue.
-  2. Apply the `status:in-progress` label.
-  3. Move the issue to the `In Progress` column on the project board.
+  2. Move the issue to the `In Progress` column on the project board.
 - This prevents two agents from picking up the same issue simultaneously.
-- On opening a PR, switch the label to `status:review` and move the board column to `In Review`.
+- On opening a PR, move the board column to `In Review`.
 
 # Refinement Sessions
 

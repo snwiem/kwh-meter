@@ -2,7 +2,7 @@
 name: Documentation
 about: Documentation-only changes or additions
 title: 'docs: '
-labels: 'type:documentation,status:ready'
+labels: 'type:documentation'
 ---
 
 ## Summary

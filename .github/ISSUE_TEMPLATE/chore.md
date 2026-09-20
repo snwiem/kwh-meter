@@ -2,7 +2,7 @@
 name: Chore
 about: Infrastructure, configuration, dependency updates, or other non-feature work
 title: 'chore: '
-labels: 'type:chore,status:ready'
+labels: 'type:chore'
 ---
 
 ## Summary

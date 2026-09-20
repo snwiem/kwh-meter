@@ -2,7 +2,7 @@
 name: Feature
 about: A new capability or requirement
 title: 'feat: '
-labels: 'type:feature,status:ready'
+labels: 'type:feature'
 ---
 
 ## Summary
