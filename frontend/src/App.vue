@@ -18,6 +18,8 @@ const isEditPage = computed(() => {
   return /\/readings\/\d+\/edit$/.test(route.path)
 })
 
+const showBackButton = computed(() => isDetailPage.value || route.path === '/add')
+
 onMounted(async () => {
   try {
     const res = await fetch('/api/meter')
@@ -95,7 +97,7 @@ watch(
     <!-- Global top bar -->
     <div class="top-bar">
       <button
-        v-if="isDetailPage"
+        v-if="showBackButton"
         class="back-btn"
         aria-label="Zurück zur Übersicht"
         @click="goBack"
