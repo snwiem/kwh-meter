@@ -222,3 +222,25 @@ async def update_reading(
     await session.commit()
     await session.refresh(reading)
     return ReadingOut.model_validate(reading)
+
+
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_reading(
+    id: int,
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    """Delete a reading by its ID, if it belongs to the active meter."""
+    zaehler_nr: str = request.app.state.active_zaehler_nr
+
+    result = await session.execute(
+        select(Reading)
+        .where(Reading.id == id, Reading.zaehler_nr == zaehler_nr)
+    )
+    reading = result.scalar_one_or_none()
+
+    if reading is None:
+        raise HTTPException(status_code=404, detail="Reading not found")
+
+    await session.delete(reading)
+    await session.commit()
