@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 interface Reading {
   id: number
@@ -82,7 +85,7 @@ onMounted(load)
               </tr>
             </thead>
             <tbody>
-              <tr v-for="r in readings" :key="r.id">
+              <tr v-for="r in readings" :key="r.id" @click="router.push(`/readings/${r.id}`)" class="clickable-row">
                 <td>{{ formatTimestamp(r.timestamp) }}</td>
                 <td class="value">{{ r.value_kwh.toFixed(1) }} kWh</td>
                 <td class="comment-cell">
@@ -158,6 +161,15 @@ onMounted(load)
 .comment-icon {
   cursor: default;
   font-size: 1rem;
+}
+
+.clickable-row {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.clickable-row:hover {
+  background: #f5f5f5;
 }
 
 .pagination {
