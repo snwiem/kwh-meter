@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
 const route = useRoute()
 const menuOpen = ref(false)
 const zaehlerNr = ref<string>('')
+const deleteOpen = ref(false)
+const deleteError = ref<string | null>(null)
+const deleting = ref(false)
 
 const isDetailPage = computed(() => {
   return /\/readings\/\d+(\/edit)?$/.test(route.path)
@@ -45,10 +48,46 @@ function editReading() {
   if (id) router.push(`/readings/${id}/edit`)
 }
 
-function deleteReading() {
-  // TODO: open confirmation modal (issue #14)
-  console.log('delete reading', route.params.id)
+function openDelete() {
+  deleteOpen.value = true
 }
+
+function cancelDelete() {
+  deleteOpen.value = false
+}
+
+async function confirmDelete() {
+  deleting.value = true
+  deleteError.value = null
+  const id = route.params.id
+  try {
+    const res = await fetch(`/api/readings/${id}`, { method: 'DELETE' })
+    if (res.ok) {
+      deleteOpen.value = false
+      router.push('/')
+      return
+    }
+    let message = `Fehler ${res.status}`
+    const body = await res.json().catch(() => null)
+    if (body && typeof body.detail === 'string') message = body.detail
+    deleteOpen.value = false
+    deleteError.value = message
+  } catch (e) {
+    deleteOpen.value = false
+    deleteError.value = e instanceof Error ? e.message : 'Unbekannter Fehler'
+  } finally {
+    deleting.value = false
+  }
+}
+
+// Reset delete state when navigating away
+watch(
+  () => route.path,
+  () => {
+    deleteOpen.value = false
+    deleteError.value = null
+  }
+)
 </script>
 
 <template>
@@ -75,7 +114,7 @@ function deleteReading() {
         <!-- Show edit/delete on detail page (not edit page) -->
         <template v-if="isDetailPage && !isEditPage">
           <button class="edit-btn" aria-label="Eintrag bearbeiten" @click="editReading">✏️</button>
-          <button class="delete-btn" aria-label="Eintrag löschen" @click="deleteReading">🗑️</button>
+          <button class="delete-btn" aria-label="Eintrag löschen" @click="openDelete">🗑️</button>
         </template>
         <button class="burger-btn" aria-label="Menü öffnen" @click="menuOpen = true">☰</button>
       </div>
@@ -94,8 +133,25 @@ function deleteReading() {
       </div>
     </Transition>
 
+    <!-- Delete confirmation modal -->
+    <Transition name="fade">
+      <div v-if="deleteOpen" class="delete-overlay" @click.self="cancelDelete">
+        <div class="delete-dialog" role="dialog" aria-modal="true" aria-label="Wirklich löschen?">
+          <p class="delete-question">Wirklich löschen?</p>
+          <div class="delete-actions">
+            <button type="button" class="btn-no" :disabled="deleting" @click="cancelDelete">Nein</button>
+            <button type="button" class="btn-yes" :disabled="deleting" @click="confirmDelete">Ja</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
     <!-- Page content -->
     <main class="page-content">
+      <div
+        v-if="deleteError && isDetailPage && !isEditPage"
+        class="delete-error"
+      >{{ deleteError }}</div>
       <RouterView />
     </main>
   </div>
@@ -265,6 +321,83 @@ body {
 
 .page-content {
   flex: 1;
+}
+
+/* Delete error banner */
+.delete-error {
+  background: #fdecea;
+  color: #c0392b;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #f5c6c2;
+}
+
+/* Delete confirmation modal */
+.delete-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.delete-dialog {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.25rem;
+  width: min(320px, 90vw);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.delete-question {
+  margin: 0 0 1.25rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #222;
+}
+
+.delete-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.btn-no {
+  padding: 0.5rem 1.25rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.btn-no:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.btn-yes {
+  padding: 0.5rem 1.25rem;
+  border: none;
+  border-radius: 4px;
+  background: #d9534f;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.btn-yes:hover:not(:disabled) {
+  background: #c9302c;
+}
+
+.btn-no:disabled,
+.btn-yes:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 /* Transition */

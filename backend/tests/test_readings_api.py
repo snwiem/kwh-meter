@@ -275,3 +275,24 @@ async def test_get_neighbours_exclude_id(test_client: AsyncClient) -> None:
     data = response.json()
     assert data["previous"]["value_kwh"] == 100.0
     assert data["next"]["value_kwh"] == 500.0
+
+
+@pytest.mark.asyncio
+async def test_delete_reading_success(test_client: AsyncClient) -> None:
+    """Deleting a reading returns 204 and the record is no longer retrievable."""
+    created = await test_client.post("/api/readings", json=VALID_PAYLOAD)
+    reading_id = created.json()["id"]
+
+    response = await test_client.delete(f"/api/readings/{reading_id}")
+    assert response.status_code == 204
+
+    # The record must be gone
+    get_response = await test_client.get(f"/api/readings/{reading_id}")
+    assert get_response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_delete_reading_not_found(test_client: AsyncClient) -> None:
+    """Deleting a non-existent reading returns 404."""
+    response = await test_client.delete("/api/readings/99999")
+    assert response.status_code == 404
