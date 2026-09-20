@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useInfiniteScroll } from '@vueuse/core'
 
 const router = useRouter()
 
@@ -23,7 +24,11 @@ const page = ref(1)
 const total = ref(0)
 const pageSize = 10
 const loading = ref(true)
+const loadingMore = ref(false)
 const error = ref<string | null>(null)
+const loadMoreError = ref<string | null>(null)
+
+const hasMore = computed(() => readings.value.length < total.value)
 
 function formatTimestamp(iso: string): string {
   const d = new Date(iso)
@@ -35,21 +40,20 @@ function formatTimestamp(iso: string): string {
   return `${dd}.${mm}.${yyyy} ${hh}:${min}`
 }
 
-const totalPages = () => Math.max(1, Math.ceil(total.value / pageSize))
-
-async function fetchReadings() {
-  const res = await fetch(`/api/readings?page=${page.value}&page_size=${pageSize}`)
+async function fetchPage(p: number): Promise<ReadingsPage> {
+  const res = await fetch(`/api/readings?page=${p}&page_size=${pageSize}`)
   if (!res.ok) throw new Error(`Readings API error: ${res.status}`)
-  const data: ReadingsPage = await res.json()
-  readings.value = data.items
-  total.value = data.total
+  return await res.json()
 }
 
-async function load() {
+async function loadInitial() {
   loading.value = true
   error.value = null
   try {
-    await fetchReadings()
+    const data = await fetchPage(1)
+    readings.value = data.items
+    total.value = data.total
+    page.value = 1
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Unbekannter Fehler'
   } finally {
@@ -57,18 +61,59 @@ async function load() {
   }
 }
 
-async function goToPage(p: number) {
-  page.value = p
-  await fetchReadings()
+async function loadMore() {
+  if (loadingMore.value || !hasMore.value) return
+  loadingMore.value = true
+  loadMoreError.value = null
+  try {
+    const next = page.value + 1
+    const data = await fetchPage(next)
+    readings.value = [...readings.value, ...data.items]
+    total.value = data.total
+    page.value = next
+  } catch (e) {
+    loadMoreError.value = e instanceof Error ? e.message : 'Unbekannter Fehler'
+  } finally {
+    loadingMore.value = false
+  }
 }
 
-onMounted(load)
+// Scroll-driven loading: invoke loadMore when the user scrolls near the bottom.
+useInfiniteScroll(
+  window,
+  () => loadMore(),
+  {
+    distance: 200,
+    canLoadMore: () => hasMore.value && !loadMoreError.value,
+  }
+)
+
+// Fill the viewport: when there is no scrollbar there are no scroll events, so
+// after each data change load another batch while the content still fits the
+// screen (plus a small lookahead).
+function fitsViewport(): boolean {
+  const doc = document.documentElement
+  return doc.scrollHeight - window.scrollY <= window.innerHeight + 200
+}
+
+watch(readings, () => {
+  nextTick(() => {
+    if (fitsViewport()) {
+      loadMore()
+    }
+  })
+})
+
+onMounted(loadInitial)
 </script>
 
 <template>
   <div class="screen">
     <main>
-      <div v-if="error" class="error-msg">{{ error }}</div>
+      <div v-if="error" class="error-msg">
+        {{ error }}
+        <button class="retry-btn" @click="loadInitial">Erneut versuchen</button>
+      </div>
 
       <div v-else-if="loading" class="empty">Lädt…</div>
 
@@ -96,10 +141,11 @@ onMounted(load)
           </table>
         </div>
 
-        <div v-if="totalPages() > 1" class="pagination">
-          <button :disabled="page <= 1" @click="goToPage(page - 1)">&lt; Zurück</button>
-          <span>Seite {{ page }} / {{ totalPages() }}</span>
-          <button :disabled="page >= totalPages()" @click="goToPage(page + 1)">Weiter &gt;</button>
+        <div v-if="loadingMore" class="load-more-status">Lädt…</div>
+
+        <div v-if="loadMoreError" class="load-more-error">
+          {{ loadMoreError }}
+          <button class="retry-btn" @click="loadMore">Erneut versuchen</button>
         </div>
       </template>
     </main>
@@ -172,24 +218,32 @@ onMounted(load)
   background: #f5f5f5;
 }
 
-.pagination {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 1rem;
-  gap: 0.5rem;
+.load-more-status {
+  text-align: center;
+  color: #888;
+  padding: 0.75rem 0;
 }
 
-.pagination button {
+.load-more-error {
+  text-align: center;
+  color: #c0392b;
+  padding: 0.75rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.retry-btn {
   padding: 0.3rem 0.75rem;
   cursor: pointer;
   border: 1px solid #ccc;
   border-radius: 4px;
   background: #fff;
+  font-size: 0.9rem;
 }
 
-.pagination button:disabled {
-  opacity: 0.4;
-  cursor: default;
+.retry-btn:hover {
+  background: #f0f0f0;
 }
 </style>
