@@ -23,6 +23,15 @@
 - Any interaction with GitHub (pull requests, issues, releases, etc.) must be done using the **`gh` CLI tool** (GitHub CLI).
 - Do not use the GitHub web UI or REST API directly.
 
+# Refinement Sessions
+
+When gathering or refining requirements with the user, follow these rules:
+
+- **Ask questions one at a time.** Never bundle multiple questions into a single message.
+- **Ask until aligned.** Keep asking follow-up questions until there is a clear, shared understanding of the requirement or decision at hand — do not assume or fill in gaps silently.
+- **Write it down.** Once alignment is reached, immediately capture the outcome in the appropriate file (`docs/feature/` or `docs/adr/`) and commit it.
+- **Don't jump ahead.** Do not start writing feature files or ADRs before the conversation has produced a clear and agreed-upon answer.
+
 # Repository Structure
 
 ## docs/feature/
