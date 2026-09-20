@@ -15,7 +15,7 @@ The application is configured with exactly one active energy meter via an extern
 
 | Field        | Type   | Description                          |
 |--------------|--------|--------------------------------------|
-| zaehler_nr   | string | Globally unique meter ID (Zählernummer) |
+| zaehler_nr   | string | Meter ID, unique within Germany (Zählernummer) |
 | street       | string | Street name                          |
 | house_number | string | House number                         |
 | postal_code  | string | German postal code (PLZ)             |

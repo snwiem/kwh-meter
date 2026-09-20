@@ -21,15 +21,12 @@ The main screen is the entry point of the application. It shows the currently co
 |-----------|----------------------------------------------------------|
 | Date/Time | Timestamp in German format: `DD.MM.YYYY HH:MM`           |
 | Value     | The kWh value of the reading                             |
-| Comment   | An icon indicator shown only if a comment exists; clicking it (or anywhere on the row) opens the record detail overlay |
+| Comment   | An icon indicator shown only if a comment exists; **not clickable in MVP** (see Feature 0005) |
 
-## Record detail overlay (read-only)
-
-- Clicking anywhere on a list entry opens a **modal overlay**.
-- The overlay displays all fields of the record: date/time, value, and comment.
-- The overlay is **read-only** — no editing is possible from here.
+> The record detail overlay (clicking a record to view full details) is explicitly **out of scope for MVP**. It is deferred to Feature 0005.
 
 ## Navigation
 
 - The "+" button navigates to a **separate page** for adding a new reading (see Feature 0003).
+- Clicking on a list entry has **no action** in MVP.
 - No other navigation is required on the main screen for MVP.

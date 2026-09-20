@@ -8,8 +8,9 @@ An energy meter represents a physical electricity meter installed at a specific 
 
 ### Identity
 
-- The **Zählernummer** (meter number) is the globally unique identifier of a physical energy meter.
+- The **Zählernummer** (meter number) is the unique identifier of a physical energy meter within Germany.
 - It is assigned by the grid operator and is printed on the physical device.
+- Uniqueness is guaranteed at country level (Germany) only — not internationally.
 - Within this application, the Zählernummer is the **primary reference** that links all collected readings to a specific physical meter.
 - The application is configured with exactly **one active meter** at any point in time (via an external config file).
 
@@ -24,7 +25,7 @@ An energy meter represents a physical electricity meter installed at a specific 
 
 | Field         | German term     | Description                        | Required |
 |---------------|-----------------|------------------------------------|----------|
-| Zählernummer  | Zählernummer    | Globally unique meter identifier   | Yes      |
+| Zählernummer  | Zählernummer    | Meter identifier, unique within Germany | Yes      |
 | Street        | Straße          | Street name of the meter location  | Yes      |
 | House number  | Hausnummer      | House number of the meter location | Yes      |
 | Postal code   | Postleitzahl    | German postal code (PLZ)           | Yes      |
