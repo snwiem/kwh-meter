@@ -24,6 +24,7 @@ from .config import load_meter_config
 from . import database as db_module
 from .database import Base
 from .models import Meter, Reading  # noqa: F401 — Reading must be imported so Base.metadata includes the readings table
+from .routers import export as export_router
 from .routers import meter as meter_router
 from .routers import readings as readings_router
 
@@ -74,6 +75,7 @@ app = FastAPI(title="kWh Meter API", version="0.1.0", lifespan=lifespan)
 
 app.include_router(meter_router.router)
 app.include_router(readings_router.router)
+app.include_router(export_router.router)
 
 
 @app.get("/health")
