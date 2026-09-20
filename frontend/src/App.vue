@@ -100,6 +100,7 @@ watch(
         aria-label="Zurück zur Übersicht"
         @click="goBack"
       >←</button>
+      <img class="app-logo" src="/favicon.svg" alt="" aria-hidden="true" />
       <span class="zaehler-label" :title="zaehlerNr">
         {{ zaehlerNr || '…' }}
       </span>
@@ -236,6 +237,12 @@ body {
 
 .back-btn:hover {
   opacity: 0.75;
+}
+
+.app-logo {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
 }
 
 .edit-btn,
