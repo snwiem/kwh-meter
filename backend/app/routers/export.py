@@ -5,6 +5,8 @@ from __future__ import annotations
 import io
 import json
 
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import Response, StreamingResponse
 from sqlalchemy import select
@@ -67,11 +69,13 @@ async def export_tsv(
                 f"{comment}\n"
             )
 
+    now = datetime.now(timezone.utc).strftime("%Y%m%d%H%M")
+    filename = f"{zaehler_nr}-{now}.tsv"
     return StreamingResponse(
         generate(),
         media_type="text/tab-separated-values; charset=utf-8",
         headers={
-            "Content-Disposition": 'attachment; filename="readings.tsv"',
+            "Content-Disposition": f'attachment; filename="{filename}"',
         },
     )
 
@@ -95,10 +99,12 @@ async def export_json(
         for r in readings
     ]
 
+    now = datetime.now(timezone.utc).strftime("%Y%m%d%H%M")
+    filename = f"{zaehler_nr}-{now}.json"
     return Response(
         content=json.dumps(data, ensure_ascii=False, indent=2),
         media_type="application/json",
         headers={
-            "Content-Disposition": 'attachment; filename="readings.json"',
+            "Content-Disposition": f'attachment; filename="{filename}"',
         },
     )

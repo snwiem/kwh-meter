@@ -57,8 +57,11 @@ async def test_tsv_timestamp_german_format(test_client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_tsv_content_disposition(test_client: AsyncClient) -> None:
     response = await test_client.get("/api/export/tsv")
-    assert "attachment" in response.headers.get("content-disposition", "")
-    assert "readings.tsv" in response.headers.get("content-disposition", "")
+    cd = response.headers.get("content-disposition", "")
+    assert "attachment" in cd
+    assert ".tsv" in cd
+    # filename pattern: <zaehlernr>-<yyyyMMddHHmm>.tsv
+    assert "DE00012345678901234567890-" in cd
 
 
 @pytest.mark.asyncio
@@ -100,5 +103,8 @@ async def test_json_comment_present(test_client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_json_content_disposition(test_client: AsyncClient) -> None:
     response = await test_client.get("/api/export/json")
-    assert "attachment" in response.headers.get("content-disposition", "")
-    assert "readings.json" in response.headers.get("content-disposition", "")
+    cd = response.headers.get("content-disposition", "")
+    assert "attachment" in cd
+    assert ".json" in cd
+    # filename pattern: <zaehlernr>-<yyyyMMddHHmm>.json
+    assert "DE00012345678901234567890-" in cd
