@@ -84,7 +84,8 @@ Always update the Status field when transitioning between states.
 ### Branch & PR Conventions
 
 - Branch names must reference the issue number: `feature/42-short-description` or `fix/42-short-description`
-- PR descriptions must contain `closes #<issue-number>` to auto-close the issue on merge.
+- PR descriptions must contain `closes #<issue-number>` to auto-close the issue on merge **only when that PR contains the actual implementation of the issue**.
+- **Never** use `closes #<n>` in infrastructure, setup, or documentation PRs that are not the direct implementation of the referenced issue. Use `relates to #<n>` instead if a reference is needed.
 - One issue = one branch = one PR.
 
 ### Parallel Agent Coordination
