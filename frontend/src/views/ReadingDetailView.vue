@@ -55,6 +55,9 @@ watch(() => route.params.id, fetchReading)
 <template>
   <div class="screen">
     <main>
+      <header class="header">
+        <h1 class="title">Ablesungsdetails</h1>
+      </header>
       <div v-if="error" class="error-msg">{{ error }}</div>
       <div v-else-if="loading" class="empty">Lädt…</div>
       <div v-else-if="reading" class="detail-wrapper">
@@ -81,6 +84,19 @@ watch(() => route.params.id, fetchReading)
   max-width: 600px;
   margin: 0 auto;
   padding: 1rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  font-size: 1.2rem;
+  margin: 0;
 }
 
 .empty {
