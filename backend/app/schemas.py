@@ -66,6 +66,13 @@ class ReadingOut(BaseModel):
         return data
 
 
+class ReadingNeighbours(BaseModel):
+    """The nearest readings before and after a given timestamp."""
+
+    previous: ReadingOut | None
+    next: ReadingOut | None
+
+
 class ReadingsPage(BaseModel):
     """Paginated list of readings."""
 

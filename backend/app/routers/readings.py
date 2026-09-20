@@ -2,15 +2,55 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Request, status
+from datetime import datetime
+from decimal import Decimal
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_session
 from ..models import Reading
-from ..schemas import ReadingCreate, ReadingOut, ReadingsPage
+from ..schemas import ReadingCreate, ReadingNeighbours, ReadingOut, ReadingsPage
 
 router = APIRouter(prefix="/api/readings", tags=["readings"])
+
+
+@router.get("/neighbours", response_model=ReadingNeighbours)
+async def get_neighbours(
+    timestamp: datetime,
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+) -> ReadingNeighbours:
+    """Return the nearest reading before and after the given timestamp."""
+    zaehler_nr: str = request.app.state.active_zaehler_nr
+    return await _fetch_neighbours(session, zaehler_nr, timestamp)
+
+
+async def _fetch_neighbours(
+    session: AsyncSession, zaehler_nr: str, timestamp: datetime
+) -> ReadingNeighbours:
+    """Fetch the immediately preceding and following readings for a timestamp."""
+    prev_result = await session.execute(
+        select(Reading)
+        .where(Reading.zaehler_nr == zaehler_nr, Reading.timestamp < timestamp)
+        .order_by(Reading.timestamp.desc())
+        .limit(1)
+    )
+    prev = prev_result.scalar_one_or_none()
+
+    next_result = await session.execute(
+        select(Reading)
+        .where(Reading.zaehler_nr == zaehler_nr, Reading.timestamp > timestamp)
+        .order_by(Reading.timestamp.asc())
+        .limit(1)
+    )
+    nxt = next_result.scalar_one_or_none()
+
+    return ReadingNeighbours(
+        previous=ReadingOut.model_validate(prev) if prev else None,
+        next=ReadingOut.model_validate(nxt) if nxt else None,
+    )
 
 
 @router.post("", response_model=ReadingOut, status_code=status.HTTP_201_CREATED)
@@ -21,6 +61,30 @@ async def create_reading(
 ) -> ReadingOut:
     """Record a new kWh reading for the currently active meter."""
     zaehler_nr: str = request.app.state.active_zaehler_nr
+
+    # Validate value fits between neighbouring readings
+    neighbours = await _fetch_neighbours(session, zaehler_nr, body.timestamp)
+    if neighbours.previous is not None and body.value_kwh < Decimal(
+        str(neighbours.previous.value_kwh)
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Wert muss mindestens {neighbours.previous.value_kwh} kWh betragen "
+                f"(vorherige Ablesung)."
+            ),
+        )
+    if neighbours.next is not None and body.value_kwh > Decimal(
+        str(neighbours.next.value_kwh)
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Wert darf höchstens {neighbours.next.value_kwh} kWh betragen "
+                f"(nächste Ablesung)."
+            ),
+        )
+
     reading = Reading(
         zaehler_nr=zaehler_nr,
         timestamp=body.timestamp,
