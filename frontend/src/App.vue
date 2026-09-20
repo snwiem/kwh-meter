@@ -1,11 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
 const route = useRoute()
 const menuOpen = ref(false)
 const zaehlerNr = ref<string>('')
+
+const isDetailPage = computed(() => {
+  return /\/readings\/\d+(\/edit)?$/.test(route.path)
+})
+
+const isEditPage = computed(() => {
+  return /\/readings\/\d+\/edit$/.test(route.path)
+})
 
 onMounted(async () => {
   try {
@@ -23,12 +31,32 @@ function navigate(to: string) {
   menuOpen.value = false
   router.push(to)
 }
+
+function goBack() {
+  router.push('/')
+}
+
+function editReading() {
+  const id = route.params.id
+  if (id) router.push(`/readings/${id}/edit`)
+}
+
+function deleteReading() {
+  // TODO: open confirmation modal (issue #14)
+  console.log('delete reading', route.params.id)
+}
 </script>
 
 <template>
   <div class="app-shell">
     <!-- Global top bar -->
     <div class="top-bar">
+      <button
+        v-if="isDetailPage"
+        class="back-btn"
+        aria-label="Zurück zur Übersicht"
+        @click="goBack"
+      >←</button>
       <span class="zaehler-label" :title="zaehlerNr">
         {{ zaehlerNr || '…' }}
       </span>
@@ -40,6 +68,11 @@ function navigate(to: string) {
           aria-label="Neue Ablesung hinzufügen"
           @click="router.push('/add')"
         >+</button>
+        <!-- Show edit/delete on detail page (not edit page) -->
+        <template v-if="isDetailPage && !isEditPage">
+          <button class="edit-btn" aria-label="Eintrag bearbeiten" @click="editReading">✏️</button>
+          <button class="delete-btn" aria-label="Eintrag löschen" @click="deleteReading">🗑️</button>
+        </template>
         <button class="burger-btn" aria-label="Menü öffnen" @click="menuOpen = true">☰</button>
       </div>
     </div>
@@ -129,6 +162,35 @@ body {
 
 .add-btn:hover {
   background: #e8e8e8;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  flex-shrink: 0;
+}
+
+.back-btn:hover {
+  opacity: 0.75;
+}
+
+.edit-btn,
+.delete-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.1rem 0.3rem;
+}
+
+.edit-btn:hover,
+.delete-btn:hover {
+  opacity: 0.75;
 }
 
 .burger-btn {

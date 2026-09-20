@@ -134,3 +134,24 @@ async def list_readings(
         page_size=page_size,
         total=total,
     )
+
+
+@router.get("/{id}", response_model=ReadingOut)
+async def get_reading(
+    id: int,
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+) -> ReadingOut:
+    """Return a single reading by its ID, if it belongs to the active meter."""
+    zaehler_nr: str = request.app.state.active_zaehler_nr
+    
+    result = await session.execute(
+        select(Reading)
+        .where(Reading.id == id, Reading.zaehler_nr == zaehler_nr)
+    )
+    reading = result.scalar_one_or_none()
+    
+    if reading is None:
+        raise HTTPException(status_code=404, detail="Reading not found")
+        
+    return ReadingOut.model_validate(reading)
