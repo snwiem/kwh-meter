@@ -23,6 +23,15 @@
 - Any interaction with GitHub (pull requests, issues, releases, etc.) must be done using the **`gh` CLI tool** (GitHub CLI).
 - Do not use the GitHub web UI or REST API directly.
 
+# Refinement Sessions
+
+When gathering or refining requirements with the user, follow these rules:
+
+- **Ask questions one at a time.** Never bundle multiple questions into a single message.
+- **Ask until aligned.** Keep asking follow-up questions until there is a clear, shared understanding of the requirement or decision at hand — do not assume or fill in gaps silently.
+- **Write it down.** Once alignment is reached, immediately capture the outcome in the appropriate file (`docs/feature/` or `docs/adr/`) and commit it.
+- **Don't jump ahead.** Do not start writing feature files or ADRs before the conversation has produced a clear and agreed-upon answer.
+
 # Repository Structure
 
 ## docs/feature/
@@ -32,6 +41,10 @@ Contains feature and requirements definitions as simple Markdown files. Each fil
 - **Naming convention:** `docs/feature/NNNN_short_description.md` (zero-padded 4-digit number, e.g. `0001_add_meter.md`)
 - Files are written in plain Markdown and focus on *what* is needed, not *how* it is implemented.
 - New features should always get a corresponding file here before implementation begins.
+
+## docs/domain-concept.md
+
+A single document describing the core domain objects, their meaning, attributes, and relationships. It is the authoritative reference for domain terminology used across feature files, ADRs, and source code. Keep it up to date as the domain model evolves.
 
 ## docs/adr/
 
