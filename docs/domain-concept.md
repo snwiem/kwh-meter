@@ -45,5 +45,10 @@ A reading represents a single manually recorded value taken from the energy mete
 |---------------|----------------------------------------------------------|----------|
 | Zählernummer  | Reference to the meter this reading belongs to          | Yes      |
 | Timestamp     | Date and time the reading was taken                      | Yes      |
-| Value         | The kWh value read from the meter display                | Yes      |
+| Value         | The kWh reading shown on the meter display; stored to one decimal place | Yes |
 | Comment       | An optional free-text note about this reading            | No       |
+
+### Business rules
+
+- Readings are time-ordered and the value is **monotonically non-decreasing**: a reading's value must be greater than or equal to the immediately preceding reading (if any) and less than or equal to the immediately following reading (if any). This reflects that an electricity meter only ever counts upward.
+- This invariant is enforced by the backend on both create and update (a value that violates the ordering is rejected with a validation error).

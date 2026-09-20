@@ -1,9 +1,5 @@
 # Feature 0005 — Record Detail View
 
-## Status
-
-Ready — replacing the previously defined modal overlay approach.
-
 ## Summary
 
 When a user taps or clicks on a reading entry in the main screen list, the app navigates to a dedicated detail page (not a modal overlay) showing the full details of that record in read-only mode.
