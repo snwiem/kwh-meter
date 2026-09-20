@@ -158,3 +158,120 @@ async def test_list_readings_pagination(test_client: AsyncClient) -> None:
     d2 = r2.json()
     assert len(d2["items"]) == 2
     assert d2["page"] == 2
+
+
+@pytest.mark.asyncio
+async def test_get_reading_happy_path(test_client: AsyncClient) -> None:
+    created = await test_client.post("/api/readings", json=VALID_PAYLOAD)
+    reading_id = created.json()["id"]
+
+    response = await test_client.get(f"/api/readings/{reading_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == reading_id
+    assert data["value_kwh"] == 1234.5
+
+
+@pytest.mark.asyncio
+async def test_get_reading_not_found(test_client: AsyncClient) -> None:
+    response = await test_client.get("/api/readings/99999")
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_update_reading_happy_path(test_client: AsyncClient) -> None:
+    created = await test_client.post("/api/readings", json=VALID_PAYLOAD)
+    reading_id = created.json()["id"]
+
+    payload = {
+        "timestamp": "2024-06-01T10:00:00+00:00",
+        "value_kwh": 1500.0,
+        "comment": "updated comment",
+    }
+    response = await test_client.put(f"/api/readings/{reading_id}", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == reading_id
+    assert data["value_kwh"] == 1500.0
+    assert data["comment"] == "updated comment"
+
+
+@pytest.mark.asyncio
+async def test_update_reading_not_found(test_client: AsyncClient) -> None:
+    response = await test_client.put(
+        "/api/readings/99999",
+        json={
+            "timestamp": "2024-06-01T10:00:00+00:00",
+            "value_kwh": 1500.0,
+            "comment": None,
+        },
+    )
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_update_reading_ignores_self_in_validation(test_client: AsyncClient) -> None:
+    """Editing a reading must not treat its own previous row as a neighbour."""
+    await test_client.post("/api/readings", json={**VALID_PAYLOAD, "timestamp": "2024-01-01T08:00:00+00:00", "value_kwh": 100.0})
+    mid = await test_client.post("/api/readings", json={**VALID_PAYLOAD, "timestamp": "2024-06-01T08:00:00+00:00", "value_kwh": 300.0})
+    await test_client.post("/api/readings", json={**VALID_PAYLOAD, "timestamp": "2024-12-01T08:00:00+00:00", "value_kwh": 500.0})
+    mid_id = mid.json()["id"]
+
+    # Move the middle reading later in time and lower its value to 250, which is
+    # still >= 100 (previous) and <= 500 (next). Without self-exclusion, its own
+    # old row (value 300) would become the previous neighbour and reject 250.
+    payload = {
+        "timestamp": "2024-11-01T08:00:00+00:00",
+        "value_kwh": 250.0,
+        "comment": None,
+    }
+    response = await test_client.put(f"/api/readings/{mid_id}", json=payload)
+    assert response.status_code == 200
+    assert response.json()["value_kwh"] == 250.0
+
+
+@pytest.mark.asyncio
+async def test_update_reading_below_previous_rejected(test_client: AsyncClient) -> None:
+    await test_client.post("/api/readings", json={**VALID_PAYLOAD, "timestamp": "2024-01-01T08:00:00+00:00", "value_kwh": 100.0})
+    created = await test_client.post("/api/readings", json={**VALID_PAYLOAD, "timestamp": "2024-06-01T08:00:00+00:00", "value_kwh": 300.0})
+    reading_id = created.json()["id"]
+
+    payload = {
+        "timestamp": "2024-06-01T08:00:00+00:00",
+        "value_kwh": 50.0,
+        "comment": None,
+    }
+    response = await test_client.put(f"/api/readings/{reading_id}", json=payload)
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_update_reading_above_next_rejected(test_client: AsyncClient) -> None:
+    created = await test_client.post("/api/readings", json={**VALID_PAYLOAD, "timestamp": "2024-06-01T08:00:00+00:00", "value_kwh": 300.0})
+    await test_client.post("/api/readings", json={**VALID_PAYLOAD, "timestamp": "2024-12-01T08:00:00+00:00", "value_kwh": 500.0})
+    reading_id = created.json()["id"]
+
+    payload = {
+        "timestamp": "2024-06-01T08:00:00+00:00",
+        "value_kwh": 600.0,
+        "comment": None,
+    }
+    response = await test_client.put(f"/api/readings/{reading_id}", json=payload)
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_get_neighbours_exclude_id(test_client: AsyncClient) -> None:
+    """exclude_id must remove that reading from neighbour results."""
+    await test_client.post("/api/readings", json={**VALID_PAYLOAD, "timestamp": "2024-03-01T08:00:00+00:00", "value_kwh": 100.0})
+    mid = await test_client.post("/api/readings", json={**VALID_PAYLOAD, "timestamp": "2024-06-01T08:00:00+00:00", "value_kwh": 200.0})
+    await test_client.post("/api/readings", json={**VALID_PAYLOAD, "timestamp": "2024-12-01T08:00:00+00:00", "value_kwh": 500.0})
+    mid_id = mid.json()["id"]
+
+    response = await test_client.get(
+        f"/api/readings/neighbours?timestamp=2024-07-01T08:00:00%2B00:00&exclude_id={mid_id}"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["previous"]["value_kwh"] == 100.0
+    assert data["next"]["value_kwh"] == 500.0
