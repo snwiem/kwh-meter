@@ -23,7 +23,7 @@ services:
     volumes:
       # Mount the meter config file read-only; create meter-config.json
       # from meter-config.example.json and fill in your meter details.
-      - ./meter-config.json:/config/meter.json:ro
+      - ./meter-config.json:/config/meter.json:ro,z
     ports:
       - "8000:8000"
     depends_on:
