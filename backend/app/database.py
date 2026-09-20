@@ -33,6 +33,11 @@ class Base(DeclarativeBase):
 
 
 async def get_session() -> AsyncSession:  # type: ignore[return]
-    """FastAPI dependency that yields an async DB session."""
-    async with AsyncSessionLocal() as session:
+    """FastAPI dependency that yields an async DB session.
+
+    Reads AsyncSessionLocal from the module at call time so that test
+    fixtures can monkeypatch it and have the change take effect.
+    """
+    import app.database as _self
+    async with _self.AsyncSessionLocal() as session:
         yield session

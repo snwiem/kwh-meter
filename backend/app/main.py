@@ -21,9 +21,11 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .config import load_meter_config
-from .database import Base, AsyncSessionLocal, engine
-from .models import Meter
+from . import database as db_module
+from .database import Base
+from .models import Meter, Reading  # noqa: F401 — Reading must be imported so Base.metadata includes the readings table
 from .routers import meter as meter_router
+from .routers import readings as readings_router
 
 
 @asynccontextmanager
@@ -33,12 +35,12 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
     # 1. Load config (raises RuntimeError → crashes process on bad config)
     meter_cfg = load_meter_config()
 
-    # 2. Create tables
-    async with engine.begin() as conn:
+    # 2. Create tables (always read from db_module so tests can patch the engine)
+    async with db_module.engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
     # 3. Upsert meter row
-    async with AsyncSessionLocal() as session:
+    async with db_module.AsyncSessionLocal() as session:
         async with session.begin():
             result = await session.execute(
                 select(Meter).where(Meter.zaehler_nr == meter_cfg.zaehler_nr)
@@ -71,6 +73,7 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(title="kWh Meter API", version="0.1.0", lifespan=lifespan)
 
 app.include_router(meter_router.router)
+app.include_router(readings_router.router)
 
 
 @app.get("/health")
