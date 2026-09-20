@@ -76,3 +76,25 @@ The feature does **not** invent finer resolution than the gaps between readings.
 
 - Whether the analytics view is a separate page (via the global burger menu) or embedded on
   the main screen (to be decided during implementation planning).
+
+## Status & next steps
+
+> Last updated 2026-09-20.
+
+Requirements brainstorm is complete and captured in this document. Key agreed decisions:
+- Manual readings only (no smart meter / automated ingestion).
+- Energy (kWh) is measured; power (kW) is a derived average over the interval between
+  consecutive readings (see `docs/domain-concept.md`).
+- Both energy and average power are shown per interval.
+- No consumer categorization — free-text comment only; peaks imply large consumers.
+- Start with the raw-interval visualization; calendar aggregation is deferred.
+
+Remaining next actions:
+1. (Optional) Decide the analytics-view placement (separate page vs. main screen).
+2. Create a GitHub issue from this spec (use the `feature` issue template) and add it to the
+   project board (`snwiem/kwh-meter` → Projects → `kwh-meter`), milestone MVP.
+3. Implement:
+   - **Backend**: endpoint that computes interval deltas (ΔkWh, duration, average kW) between
+     consecutive readings for the active meter.
+   - **Frontend**: raw-interval chart (bar width ∝ elapsed time, height = kWh; average kW
+     secondary).
