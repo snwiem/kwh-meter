@@ -1,9 +1,5 @@
 # Feature 0009 — App Branding (Logo & Tab Title)
 
-## Status
-
-Ready
-
 ## Summary
 
 Improve the app's visual identity by adding a proper icon/logo to the top bar and updating the browser tab title to a more appropriate German-language name.

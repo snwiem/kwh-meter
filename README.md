@@ -84,6 +84,23 @@ The two core objects are **Meter** (*Stromzähler*) and **Reading** (*Ablesung*)
 
 The meter config is mounted read-only into the backend at `/config/meter.json` (see `KWH_METER_CONFIG`). Database migrations (`alembic upgrade head`) run automatically before the backend serves requests.
 
+### Running inside a Distrobox
+
+If you operate the container stack from inside a [Distrobox](https://github.com/89luca89/distrobox) container, the nested container runtime can fail to create namespaces (e.g. `newuidmap: Operation not permitted` with rootless Podman/Docker). In that case, run the container commands on the **host** via `distrobox-host-exec`:
+
+```bash
+# Build and start the stack on the host
+distrobox-host-exec docker compose up -d --build
+
+# Inspect running services
+distrobox-host-exec docker compose ps
+
+# Stop the stack
+distrobox-host-exec docker compose down
+```
+
+Use `podman-compose` instead of `docker compose` if that is what your host uses. All other commands (the local `uv`/`npm` development workflow and tests) run normally inside the distrobox.
+
 ### Local development (without Docker)
 
 **Backend** (requires Python ≥ 3.12 and [`uv`](https://docs.astral.sh/uv/)):

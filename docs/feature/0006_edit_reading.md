@@ -1,9 +1,5 @@
 # Feature 0006 — Edit Reading
 
-## Status
-
-Ready
-
 ## Summary
 
 A user can edit an existing kWh reading from the detail view. Tapping the Edit action button on the detail page navigates to a dedicated edit view that is pre-filled with the current values of the selected record.

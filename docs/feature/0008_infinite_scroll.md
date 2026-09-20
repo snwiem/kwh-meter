@@ -1,9 +1,5 @@
 # Feature 0008 — Infinite Scroll on Main Screen
 
-## Status
-
-Ready
-
 ## Summary
 
 Replace the current page-based pagination on the main screen with an infinite scroll list. Records are loaded in batches as the user scrolls down, providing a seamless mobile-first experience.

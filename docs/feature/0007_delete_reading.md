@@ -1,9 +1,5 @@
 # Feature 0007 — Delete Reading
 
-## Status
-
-Ready
-
 ## Summary
 
 A user can permanently delete an existing kWh reading from the detail view. Tapping the Delete action button on the detail page opens a simple confirmation modal. The user must explicitly confirm before the record is deleted.
