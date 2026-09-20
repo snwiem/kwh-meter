@@ -25,7 +25,9 @@
 
 ## GitHub Project & Issue Tracking
 
-All work is tracked via **GitHub Issues** linked to the **kwh-meter** project board (https://github.com/users/snwiem/projects/5).
+All work is tracked via **GitHub Issues** linked to the **kwh-meter** project board (https://github.com/users/snwiem/projects/7).
+
+The project is linked to the `snwiem/kwh-meter` repository and is accessible directly from the repo's **Projects** tab.
 
 ### Issue Templates
 
@@ -48,7 +50,21 @@ Every issue must have at least one label from each relevant axis:
 | **Scope** | `scope:frontend`, `scope:backend`, `scope:database`, `scope:infra` |
 | **Priority** | `priority:high`, `priority:low` |
 
-Workflow state (Backlog, Ready, In Progress, In Review, Done) is tracked exclusively via the **project board Status field** — not via labels.
+Workflow state is tracked exclusively via the **project board Status field** — never via labels.
+
+### Project Board Status Field
+
+The Status field on the project board (https://github.com/users/snwiem/projects/7) is the **single source of truth** for workflow state. The allowed values and their meaning are:
+
+| Status | Meaning |
+|---|---|
+| `Backlog` | Issue defined but not yet ready to start |
+| `Ready` | Fully specified, can be picked up by an agent or developer |
+| `In Progress` | Assigned and actively being worked on |
+| `In Review` | PR is open and awaiting review |
+| `Done` | PR merged, issue closed |
+
+Always update the Status field when transitioning between states.
 
 ### Milestone
 
