@@ -6,35 +6,61 @@ Ready
 
 ## Summary
 
-A user can edit an existing kWh reading from the detail view. Tapping the Edit action button on the detail page navigates to an edit view that is pre-filled with the current values of the selected record.
+A user can edit an existing kWh reading from the detail view. Tapping the Edit action button on the detail page navigates to a dedicated edit view that is pre-filled with the current values of the selected record.
 
 ## Trigger
 
 - The Edit button (pencil icon) on the detail page top bar navigates to the edit view.
 
-## Edit View Content
-
-The edit view reuses the same form layout as the "Add Reading" view (`AddReadingView`), but is pre-filled with the existing record data:
-
-| Field     | Pre-filled with             |
-|-----------|-----------------------------|
-| Date/Time | Existing timestamp          |
-| Value     | Existing kWh value          |
-| Comment   | Existing comment (or empty) |
-
-## Behavior
-
-- All fields are editable.
-- A **Save** button submits the changes via `PUT /api/readings/:id`.
-- A **Cancel** button discards changes and navigates back to the detail page.
-- After a successful save, the user is navigated back to the detail page, which reflects the updated values.
-- Validation rules are identical to the Add Reading view.
-
 ## Route
 
 `/readings/:id/edit`
 
+## Implementation Approach
+
+- A **separate** `EditReadingView` component is used (the form markup is duplicated from `AddReadingView`, not shared).
+- Rationale: keeps the edit form independently evolvable if edit-specific attributes are added later.
+
+## View Layout
+
+- **Header**: page header title **"Ablesung bearbeiten"** only (no "← Zurück" link in the header).
+- **Top bar** (global): back button returns to the **detail page** (`/readings/:id`), discarding unsaved changes.
+- **Form**: duplicates the Add form — timestamp, value, and comment fields, pre-filled.
+
+| Field     | Pre-filled with                    |
+|-----------|------------------------------------|
+| Date/Time | Existing timestamp (local format)  |
+| Value     | Existing kWh value                 |
+| Comment   | Existing comment (empty if none)   |
+
+- **Buttons** at the bottom, mirroring the Add form:
+  - **Abbrechen** — discards changes, navigates back to the detail page.
+  - **Speichern** — submits changes.
+
+## Behavior
+
+- All fields are editable.
+- **Save** submits via `PUT /api/readings/:id`.
+- After a successful save, navigate back to the detail page, which reflects the updated values.
+- **Cancel** (top-bar back button or "Abbrechen") discards changes and returns to the detail page.
+- Validation is identical to the Add view, including the in-app live range hints:
+
+| Hint | Meaning                                    |
+|------|--------------------------------------------|
+| ≥ previous | value must be at least the previous reading |
+| ≤ next     | value must be at most the next reading      |
+
+- The live range hints must **exclude the record being edited** from its own neighbour calculation.
+
+## Backend
+
+- `PUT /api/readings/{id}` endpoint:
+  - 404 if the record does not exist or belongs to a different meter.
+  - Validates the new value against the readings immediately before/after, **excluding the record itself**.
+  - Returns 422 with a German message when the value violates the ordering.
+- `GET /api/readings/neighbours` must support excluding a specific record (e.g. an optional `exclude_id` query parameter) so the edit view can show correct live hints when the timestamp changes.
+
 ## Notes
 
-- Reusing the form component from Add Reading is preferred over building a separate component.
-- The page title / top bar should indicate "Eintrag bearbeiten" (Edit Entry) to distinguish from the add flow.
+- The page title "Ablesung bearbeiten" distinguishes the edit flow from the add flow ("Neue Ablesung").
+- Removing the "← Zurück" link from the Add form header is tracked separately (see issue for tech debt).
