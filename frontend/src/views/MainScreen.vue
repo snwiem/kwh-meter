@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useInfiniteScroll } from '@vueuse/core'
 
 const router = useRouter()
 
@@ -26,11 +27,8 @@ const loading = ref(true)
 const loadingMore = ref(false)
 const error = ref<string | null>(null)
 const loadMoreError = ref<string | null>(null)
-const sentinel = ref<HTMLElement | null>(null)
 
 const hasMore = computed(() => readings.value.length < total.value)
-
-let observer: IntersectionObserver | null = null
 
 function formatTimestamp(iso: string): string {
   const d = new Date(iso)
@@ -80,27 +78,33 @@ async function loadMore() {
   }
 }
 
-// Observe/unobserve the sentinel element as it is mounted/unmounted.
-watch(sentinel, (el, prevEl) => {
-  if (prevEl) observer?.unobserve(prevEl)
-  if (el) observer?.observe(el)
+// Scroll-driven loading: invoke loadMore when the user scrolls near the bottom.
+useInfiniteScroll(
+  window,
+  () => loadMore(),
+  {
+    distance: 200,
+    canLoadMore: () => hasMore.value && !loadMoreError.value,
+  }
+)
+
+// Fill the viewport: when there is no scrollbar there are no scroll events, so
+// after each data change load another batch while the content still fits the
+// screen (plus a small lookahead).
+function fitsViewport(): boolean {
+  const doc = document.documentElement
+  return doc.scrollHeight - window.scrollY <= window.innerHeight + 200
+}
+
+watch(readings, () => {
+  nextTick(() => {
+    if (fitsViewport()) {
+      loadMore()
+    }
+  })
 })
 
-onMounted(() => {
-  observer = new IntersectionObserver(
-    (entries) => {
-      if (entries.some((entry) => entry.isIntersecting)) {
-        loadMore()
-      }
-    },
-    { rootMargin: '200px' }
-  )
-  loadInitial()
-})
-
-onBeforeUnmount(() => {
-  observer?.disconnect()
-})
+onMounted(loadInitial)
 </script>
 
 <template>
@@ -136,9 +140,6 @@ onBeforeUnmount(() => {
             </tbody>
           </table>
         </div>
-
-        <!-- Sentinel for infinite scroll (only when more records may exist) -->
-        <div v-if="hasMore" ref="sentinel" class="sentinel"></div>
 
         <div v-if="loadingMore" class="load-more-status">Lädt…</div>
 
@@ -215,10 +216,6 @@ onBeforeUnmount(() => {
 
 .clickable-row:hover {
   background: #f5f5f5;
-}
-
-.sentinel {
-  height: 1px;
 }
 
 .load-more-status {
