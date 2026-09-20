@@ -23,6 +23,62 @@
 - Any interaction with GitHub (pull requests, issues, releases, etc.) must be done using the **`gh` CLI tool** (GitHub CLI).
 - Do not use the GitHub web UI or REST API directly.
 
+## GitHub Project & Issue Tracking
+
+All work is tracked via **GitHub Issues** linked to the **kwh-meter** project board (https://github.com/users/snwiem/projects/5).
+
+### Issue Templates
+
+Four issue templates are defined in `.github/ISSUE_TEMPLATE/`. Always use the appropriate template when creating a new issue:
+
+| Template | Use for |
+|---|---|
+| `feature.md` | New capabilities or requirements |
+| `bug.md` | Something broken or behaving incorrectly |
+| `chore.md` | Infrastructure, config, dependency updates |
+| `documentation.md` | Documentation-only changes |
+
+### Labels
+
+Every issue must have at least one label from each relevant axis:
+
+| Axis | Labels |
+|---|---|
+| **Type** | `type:feature`, `type:bug`, `type:chore`, `type:documentation` |
+| **Scope** | `scope:frontend`, `scope:backend`, `scope:database`, `scope:infra` |
+| **Status** | `status:ready`, `status:in-progress`, `status:blocked`, `status:review` |
+| **Priority** | `priority:high`, `priority:low` |
+
+### Milestone
+
+- All MVP issues must be assigned to the **MVP** milestone.
+- Issues not targeted for MVP have no milestone assigned.
+
+### Project Board Columns
+
+| Column | Meaning |
+|---|---|
+| `Backlog` | Defined but not yet ready to start |
+| `Ready` | Fully specified, can be picked up by an agent or developer |
+| `In Progress` | Assigned and actively being worked on |
+| `In Review` | PR open, awaiting review |
+| `Done` | Merged and closed |
+
+### Branch & PR Conventions
+
+- Branch names must reference the issue number: `feature/42-short-description` or `fix/42-short-description`
+- PR descriptions must contain `closes #<issue-number>` to auto-close the issue on merge.
+- One issue = one branch = one PR.
+
+### Parallel Agent Coordination
+
+- Before starting work on an issue, an agent must:
+  1. Assign itself to the issue.
+  2. Apply the `status:in-progress` label.
+  3. Move the issue to the `In Progress` column on the project board.
+- This prevents two agents from picking up the same issue simultaneously.
+- On opening a PR, switch the label to `status:review` and move the board column to `In Review`.
+
 # Refinement Sessions
 
 When gathering or refining requirements with the user, follow these rules:
