@@ -115,7 +115,6 @@ async function submit() {
 <template>
   <div class="screen">
     <header class="header">
-      <button class="back-btn" @click="router.push('/')" aria-label="Zurück">← Zurück</button>
       <h1 class="title">Neue Ablesung</h1>
     </header>
 
@@ -200,19 +199,6 @@ async function submit() {
   border-bottom: 1px solid #ccc;
   padding-bottom: 0.75rem;
   margin-bottom: 1.5rem;
-}
-
-.back-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  color: #333;
-  padding: 0;
-}
-
-.back-btn:hover {
-  text-decoration: underline;
 }
 
 .title {
