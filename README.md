@@ -14,6 +14,7 @@ There is no authentication, authorization, or multi-tenancy: the app manages exa
 - **Delete a reading** — with a confirmation dialog.
 - **Export** — download all readings as TSV or JSON.
 - **Analyse** — energy-consumption overview page (`📊 Analyse` in the burger menu): each interval between consecutive readings rendered as a bar (width ∝ duration, height = energy in kWh, average power in kW shown per interval), with a date/time range selector (snap-to-reading, auto-clamped FROM < TO) above the chart. See [docs/feature/0010](docs/feature/0010_energy_consumption_overview.md) and [docs/feature/0011](docs/feature/0011_date_range_selector.md).
+- **Benachrichtigungen** — notification plan page (`🔔 Benachrichtigungen` in the burger menu): a list of daily times at which the backend reminds you via a self-hosted [ntfy](https://ntfy.sh) push notification to record a new reading; the plan is edited in the UI and persisted in the database. See [docs/feature/0012](docs/feature/0012_notification_plan.md).
 - German UI, mobile-first (Vue 3 + Vite).
 
 ## Repository layout
@@ -46,7 +47,7 @@ There is no authentication, authorization, or multi-tenancy: the app manages exa
 │   ├── adr/                  architecture decision records
 │   └── domain-concept.md     authoritative domain terminology
 ├── .github/                  issue templates
-├── docker-compose.yml        full stack (db + backend + frontend)
+├── docker-compose.yml        full stack (db + backend + frontend + ntfy)
 ├── meter-config.example.json template for the meter config
 ├── .env.example              environment variables
 └── AGENTS.md                 agent/project conventions
@@ -78,8 +79,20 @@ The two core objects are **Meter** (*Stromzähler*) and **Reading** (*Ablesung*)
    | `db`      | PostgreSQL 16                                 | (internal) |
    | `backend` | FastAPI; runs Alembic migrations on start     | `8000`    |
    | `frontend`| nginx serving the built SPA, proxying `/api`  | `5173`    |
+   | `ntfy`    | self-hosted push-notification server          | `8080`    |
 
 3. Open the app at <http://localhost:5173>. The backend API is at <http://localhost:8000> (health check: `/health`).
+
+4. Set up reading reminders (optional but recommended): create a `.env` file next to `docker-compose.yml` so compose can substitute the notification settings, and point `NTFY_PUBLIC_URL` at the **LAN address of the host** — the `http://localhost:8080` default cannot be reached from your phone:
+
+   ```bash
+   # .env
+   NTFY_PUBLIC_URL=http://192.168.1.10:8080   # LAN address of the ntfy server
+   NTFY_TOPIC=kwh-meter-readings              # topic to subscribe to in the ntfy app
+   TZ=Europe/Berlin                           # timezone reminder times fire in (default)
+   ```
+
+   Then open `🔔 Benachrichtigungen` in the app and subscribe in the ntfy phone app using the server URL and topic shown there (the deep link opens the app directly). Reminder times fire in the `TZ` timezone.
 
 The meter config is mounted read-only into the backend at `/config/meter.json` (see `KWH_METER_CONFIG`). Database migrations (`alembic upgrade head`) run automatically before the backend serves requests.
 

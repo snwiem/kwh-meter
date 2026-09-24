@@ -73,3 +73,25 @@ A reading represents a single manually recorded value taken from the energy mete
 
 - Readings are time-ordered and the value is **monotonically non-decreasing**: a reading's value must be greater than or equal to the immediately preceding reading (if any) and less than or equal to the immediately following reading (if any). This reflects that an electricity meter only ever counts upward.
 - This invariant is enforced by the backend on both create and update (a value that violates the ordering is rejected with a validation error).
+
+---
+
+## Notification Plan (Benachrichtigungsplan)
+
+The notification plan reminds the user to record readings regularly. It is a small persisted entity of its own (table `notification_times`), edited in the web UI on the `🔔 Benachrichtigungen` page.
+
+### Attributes
+
+| Field | German term | Description                                                     | Required |
+|-------|-------------|-----------------------------------------------------------------|----------|
+| Time  | Uhrzeit     | A daily time (`HH:MM`) at which a reminder is sent, in the server's local timezone | Yes      |
+
+### Business rules
+
+- The plan is a simple list of **daily times**: each time fires every day, regardless of weekday. Times are unique and always presented sorted ascending.
+- Sending is **unconditional**: every planned time always produces a reminder — there is no suppression based on recently recorded readings.
+- An **empty plan disables notifications** entirely; it acts as the implicit on/off switch (no separate enable flag).
+- Each reminder references the latest reading of the active meter using the German relative-date abstraction (*heute* / *gestern* / *am DD.MM.YYYY*).
+- Transport is a self-hosted [ntfy](https://ntfy.sh) server running in the same compose stack; plan changes take effect without restarting the backend.
+
+See [feature 0012](feature/0012_notification_plan.md) and [ADR 0004](adr/0004_notification_transport_ntfy.md).
