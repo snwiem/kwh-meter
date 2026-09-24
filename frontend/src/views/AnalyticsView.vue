@@ -13,15 +13,76 @@ const intervals = ref<Interval[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 
+// Range selection (ISO strings trimmed to minutes for datetime-local inputs)
+const from = ref('')
+const to = ref('')
+
 const CHART_W = 600
 const CHART_H = 200
 const PAD_TOP = 10
 
+// All reading timestamps in chronological order: the first interval's start
+// plus every interval's end. Intervals arrive sorted oldest-first.
+const allTimestamps = computed<string[]>(() => {
+  if (intervals.value.length === 0) return []
+  return [intervals.value[0].start, ...intervals.value.map((i) => i.end)]
+})
+
+// --- Snap rules -------------------------------------------------------------
+// FROM → latest reading on-or-before the picked datetime (clamp to earliest).
+// TO   → earliest reading on-or-after the picked datetime (clamp to latest).
+function snapFrom(ts: string, timeline: string[]): string {
+  const ok = timeline.filter((t) => t <= ts)
+  return ok.length > 0 ? ok[ok.length - 1] : timeline[0]
+}
+function snapTo(ts: string, timeline: string[]): string {
+  return timeline.find((t) => t >= ts) ?? timeline[timeline.length - 1]
+}
+
+const filteredIntervals = computed<Interval[]>(() => {
+  const timeline = allTimestamps.value
+  if (timeline.length === 0 || !from.value || !to.value) return intervals.value
+  const f = snapFrom(from.value, timeline)
+  const t = snapTo(to.value, timeline)
+  return intervals.value.filter((i) => i.start >= f && i.end <= t)
+})
+
+// --- Auto-clamping: FROM is always strictly before TO (and vice versa) ------
+function shiftMinutes(input: string, delta: number): string {
+  const d = new Date(input)
+  d.setMinutes(d.getMinutes() + delta)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return (
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  )
+}
+
+function onFromChange() {
+  if (from.value && to.value && from.value >= to.value) {
+    to.value = shiftMinutes(from.value, 1)
+  }
+}
+
+function onToChange() {
+  if (from.value && to.value && to.value <= from.value) {
+    from.value = shiftMinutes(to.value, -1)
+  }
+}
+
+function reset() {
+  const timeline = allTimestamps.value
+  if (timeline.length === 0) return
+  from.value = timeline[0].slice(0, 16)
+  to.value = timeline[timeline.length - 1].slice(0, 16)
+}
+
+// --- Chart ------------------------------------------------------------------
 const totalDuration = computed(() =>
-  intervals.value.reduce((sum, i) => sum + i.duration_hours, 0)
+  filteredIntervals.value.reduce((sum, i) => sum + i.duration_hours, 0)
 )
 const maxEnergy = computed(() =>
-  Math.max(...intervals.value.map((i) => i.energy_kwh), 0)
+  Math.max(...filteredIntervals.value.map((i) => i.energy_kwh), 0)
 )
 
 interface Bar {
@@ -49,7 +110,7 @@ function formatDuration(hours: number): string {
 
 const bars = computed<Bar[]>(() => {
   let x = 0
-  return intervals.value.map((i) => {
+  return filteredIntervals.value.map((i) => {
     const w =
       totalDuration.value > 0
         ? (i.duration_hours / totalDuration.value) * CHART_W
@@ -71,9 +132,9 @@ const bars = computed<Bar[]>(() => {
 })
 
 const rangeLabel = computed(() => {
-  if (intervals.value.length === 0) return ''
-  const first = intervals.value[0]
-  const last = intervals.value[intervals.value.length - 1]
+  if (filteredIntervals.value.length === 0) return ''
+  const first = filteredIntervals.value[0]
+  const last = filteredIntervals.value[filteredIntervals.value.length - 1]
   return `${formatTs(first.start)} – ${formatTs(last.end)}`
 })
 
@@ -84,6 +145,7 @@ async function load() {
     const res = await fetch('/api/analytics/intervals')
     if (!res.ok) throw new Error(`Fehler ${res.status}`)
     intervals.value = await res.json()
+    reset() // initial selection: full range
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Unbekannter Fehler'
   } finally {
@@ -114,33 +176,59 @@ onMounted(load)
       </div>
 
       <template v-else>
-        <p class="description">
-          Energieverbrauch zwischen den Ablesungen. Breite ∝ Dauer, Höhe =
-          Energie (kWh). Details per Tipp auf einen Balken.
-        </p>
-
-        <div class="chart-wrap">
-          <svg
-            class="chart"
-            :viewBox="`0 0 ${CHART_W} ${CHART_H}`"
-            preserveAspectRatio="none"
-            role="img"
-            aria-label="Energieverbrauch pro Intervall"
-          >
-            <g v-for="(bar, idx) in bars" :key="idx">
-              <rect
-                :x="bar.x"
-                :y="bar.y"
-                :width="bar.w"
-                :height="bar.h"
-                class="bar"
-              >
-                <title>{{ bar.tooltip }}</title>
-              </rect>
-            </g>
-          </svg>
-          <div class="range-label">{{ rangeLabel }}</div>
+        <div class="selector">
+          <label class="selector-field">
+            <span>Von</span>
+            <input
+              type="datetime-local"
+              v-model="from"
+              @change="onFromChange"
+            />
+          </label>
+          <label class="selector-field">
+            <span>Bis</span>
+            <input
+              type="datetime-local"
+              v-model="to"
+              @change="onToChange"
+            />
+          </label>
+          <button class="reset-btn" @click="reset">Gesamter Zeitraum</button>
         </div>
+
+        <div v-if="filteredIntervals.length === 0" class="empty">
+          Keine Intervalle im gewählten Zeitraum.
+        </div>
+
+        <template v-else>
+          <p class="description">
+            Energieverbrauch zwischen den Ablesungen. Breite ∝ Dauer, Höhe =
+            Energie (kWh). Details per Tipp auf einen Balken.
+          </p>
+
+          <div class="chart-wrap">
+            <svg
+              class="chart"
+              :viewBox="`0 0 ${CHART_W} ${CHART_H}`"
+              preserveAspectRatio="none"
+              role="img"
+              aria-label="Energieverbrauch pro Intervall"
+            >
+              <g v-for="(bar, idx) in bars" :key="idx">
+                <rect
+                  :x="bar.x"
+                  :y="bar.y"
+                  :width="bar.w"
+                  :height="bar.h"
+                  class="bar"
+                >
+                  <title>{{ bar.tooltip }}</title>
+                </rect>
+              </g>
+            </svg>
+            <div class="range-label">{{ rangeLabel }}</div>
+          </div>
+        </template>
       </template>
     </main>
   </div>
@@ -165,6 +253,51 @@ onMounted(load)
 .title {
   font-size: 1.2rem;
   margin: 0;
+}
+
+/* Range selector */
+.selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+}
+
+.selector-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1 1 40%;
+}
+
+.selector-field span {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.selector-field input {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  min-width: 0;
+}
+
+.reset-btn {
+  flex: 1 1 100%;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid #3a7bd5;
+  border-radius: 6px;
+  background: #fff;
+  color: #3a7bd5;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.reset-btn:hover {
+  background: #eef4fd;
 }
 
 .description {
