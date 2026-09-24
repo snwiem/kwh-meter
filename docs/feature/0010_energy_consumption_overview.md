@@ -45,6 +45,9 @@ wants both views on the data.
 
 ## Visualization (MVP): raw intervals
 
+The analytics view is a **separate page**, accessible via the **global burger menu**
+(same pattern as the Export page) — not embedded on the main screen.
+
 - Each gap between two consecutive readings is rendered as one **bar/sliver**:
   - **Width / horizontal extent** is proportional to the *actual elapsed time* of the interval.
   - **Height** represents the **energy (kWh)** consumed in that interval.
@@ -74,12 +77,11 @@ The feature does **not** invent finer resolution than the gaps between readings.
 
 ## Open questions
 
-- Whether the analytics view is a separate page (via the global burger menu) or embedded on
-  the main screen (to be decided during implementation planning).
+None — view placement decided 2026-09-24: separate page, accessible from the burger menu.
 
 ## Status & next steps
 
-> Last updated 2026-09-20.
+> Last updated 2026-09-24.
 
 Requirements brainstorm is complete and captured in this document. Key agreed decisions:
 - Manual readings only (no smart meter / automated ingestion).
@@ -88,12 +90,12 @@ Requirements brainstorm is complete and captured in this document. Key agreed de
 - Both energy and average power are shown per interval.
 - No consumer categorization — free-text comment only; peaks imply large consumers.
 - Start with the raw-interval visualization; calendar aggregation is deferred.
+- The analytics view is a separate page, accessible via the global burger menu.
 
 Remaining next actions:
-1. (Optional) Decide the analytics-view placement (separate page vs. main screen).
-2. Create a GitHub issue from this spec (use the `feature` issue template) and add it to the
+1. Create a GitHub issue from this spec (use the `feature` issue template) and add it to the
    project board (`snwiem/kwh-meter` → Projects → `kwh-meter`), milestone MVP.
-3. Implement:
+2. Implement:
    - **Backend**: endpoint that computes interval deltas (ΔkWh, duration, average kW) between
      consecutive readings for the active meter.
    - **Frontend**: raw-interval chart (bar width ∝ elapsed time, height = kWh; average kW
