@@ -5,6 +5,7 @@ import ExportView from '../views/ExportView.vue'
 import ReadingDetailView from '../views/ReadingDetailView.vue'
 import EditReadingView from '../views/EditReadingView.vue'
 import AnalyticsView from '../views/AnalyticsView.vue'
+import NotificationsView from '../views/NotificationsView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -13,6 +14,7 @@ const router = createRouter({
     { path: '/add', component: AddReadingView },
     { path: '/export', component: ExportView },
     { path: '/analytics', component: AnalyticsView },
+    { path: '/notifications', component: NotificationsView },
     { path: '/readings/:id', component: ReadingDetailView },
     { path: '/readings/:id/edit', component: EditReadingView },
   ],
