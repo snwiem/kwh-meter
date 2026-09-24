@@ -20,6 +20,8 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://kwh:kwh@db:5432/kwh
       KWH_METER_CONFIG: /config/meter.json
+      # Timezone for reminder times and the heute/gestern message wording
+      TZ: ${TZ:-Europe/Berlin}
       # Internal compose-network URL used by the backend to publish reminders
       NTFY_URL: http://ntfy:80
       # Externally reachable ntfy URL — shown in the web UI for phone-app setup
@@ -41,8 +43,12 @@ services:
   ntfy:
     # Self-hosted ntfy push-notification server (see docs/adr/0004).
     # Subscribe with the ntfy phone app via NTFY_PUBLIC_URL / topic.
-    image: binw/ntfy:2.11.0
+    image: binwiederhier/ntfy:v2.11.0
     restart: unless-stopped
+    command: ["serve", "--cache-file", "/var/lib/ntfy/cache.db"]
+    volumes:
+      # Retain published messages so late-connecting phones still get reminders
+      - ntfy_data:/var/lib/ntfy
     ports:
       - "8080:80"
 
@@ -56,3 +62,4 @@ services:
 
 volumes:
   postgres_data:
+  ntfy_data:

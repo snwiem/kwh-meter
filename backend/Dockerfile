@@ -1,5 +1,11 @@
 FROM python:3.12-slim
 
+# Timezone for the notification scheduler: reminders fire at the configured
+# HH:MM in this zone, and the heute/gestern wording is computed in it too.
+# The compose file overrides this via the TZ environment variable.
+# (python:3.12-slim already ships tzdata, so no extra packages are needed.)
+ENV TZ=Europe/Berlin
+
 WORKDIR /app
 
 # Install uv for fast dependency installation
