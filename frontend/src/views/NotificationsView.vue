@@ -20,12 +20,16 @@ const adding = ref(false)
 const error = ref<string | null>(null)
 const connectionInfo = ref<ConnectionInfo | null>(null)
 
-// ntfy://<host[:port]>/<topic> — strips the scheme from the public URL
+// ntfy://<host[:port]>/<topic> — strips the scheme from the public URL.
+// The ntfy app treats deep links as HTTPS by default; plain-HTTP servers
+// require ?secure=false, otherwise the app fails with a TLS error.
 const deepLink = computed(() => {
   if (!connectionInfo.value) return null
-  const host = connectionInfo.value.public_url.replace(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//, '').replace(/\/+$/, '')
+  const url = connectionInfo.value.public_url.trim()
+  const host = url.replace(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//, '').replace(/\/+$/, '')
   if (!host) return null
-  return `ntfy://${host}/${connectionInfo.value.topic}`
+  const insecure = /^http:\/\//i.test(url) ? '?secure=false' : ''
+  return `ntfy://${host}/${connectionInfo.value.topic}${insecure}`
 })
 
 async function fetchTimes() {
