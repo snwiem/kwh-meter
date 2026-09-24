@@ -35,6 +35,27 @@ An energy meter represents a physical electricity meter installed at a specific 
 
 ---
 
+## Energy vs. Power (Energie vs. Leistung)
+
+The application records **energy**, not power. The two are often conflated in everyday language; here they are kept strictly separate:
+
+| Term   | German   | Unit      | Meaning |
+|--------|----------|-----------|---------|
+| Energy | Energie  | Wh / kWh  | A **cumulative** quantity — the total amount of electricity transferred. This is what the meter counts and what every `Reading.value_kwh` stores. |
+| Power  | Leistung | W / kW    | The **rate** at which energy flows — energy per unit of time. Not measured directly by the meter. |
+
+### Key consequence
+
+The meter only ever reports a cumulative energy counter, so a `Reading` is an **energy value (kWh)**, not a power value (kW). Power can only be **derived as an average** over the interval between two consecutive readings:
+
+```
+average power (kW) = (value_after − value_before) [kWh] ÷ (timestamp_after − timestamp_before) [h]
+```
+
+This derived average power is the basis for all analytics (ground load, individual-consumer measurements, and time-period comparisons) described in the feature docs.
+
+---
+
 ## Reading (Ablesung)
 
 A reading represents a single manually recorded value taken from the energy meter at a specific point in time.
