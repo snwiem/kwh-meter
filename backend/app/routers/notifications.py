@@ -11,6 +11,7 @@ import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import notifications
@@ -60,7 +61,16 @@ async def create_notification_time(
 
     row = NotificationTime(time=time_value)
     session.add(row)
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError:
+        # Lost a race against a concurrent create — the DB unique constraint
+        # on time is authoritative; report the same 409 as the pre-check.
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Notification time {body.time} already exists.",
+        )
     await session.refresh(row)
 
     await notifications.reschedule_notification_times()
