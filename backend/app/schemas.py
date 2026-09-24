@@ -80,3 +80,13 @@ class ReadingsPage(BaseModel):
     page: int
     page_size: int
     total: int
+
+
+class IntervalOut(BaseModel):
+    """Energy and derived average power for one interval between consecutive readings."""
+
+    start: str                  # ISO 8601 start timestamp (older reading)
+    end: str                    # ISO 8601 end timestamp (newer reading)
+    energy_kwh: float           # ΔkWh consumed in the interval
+    duration_hours: float       # elapsed time of the interval
+    avg_power_kw: float | None  # derived average power; None if duration is zero

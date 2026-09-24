@@ -18,7 +18,9 @@ const isEditPage = computed(() => {
   return /\/readings\/\d+\/edit$/.test(route.path)
 })
 
-const showBackButton = computed(() => isDetailPage.value || route.path === '/add')
+const showBackButton = computed(() =>
+  isDetailPage.value || route.path === '/add' || route.path === '/analytics'
+)
 
 onMounted(async () => {
   try {
@@ -131,6 +133,7 @@ watch(
           <nav class="menu-nav">
             <button class="menu-item" @click="navigate('/')">🏠 Übersicht</button>
             <button class="menu-item" @click="navigate('/export')">⬇ Export</button>
+            <button class="menu-item" @click="navigate('/analytics')">📊 Analyse</button>
           </nav>
         </div>
       </div>

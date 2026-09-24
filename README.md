@@ -13,9 +13,8 @@ There is no authentication, authorization, or multi-tenancy: the app manages exa
 - **Edit a reading** — pre-filled form (`PUT`); validation matches the create flow.
 - **Delete a reading** — with a confirmation dialog.
 - **Export** — download all readings as TSV or JSON.
+- **Analyse** — energy-consumption overview page (`📊 Analyse` in the burger menu): each interval between consecutive readings rendered as a bar (width ∝ duration, height = energy in kWh, average power in kW shown per interval). See [docs/feature/0010](docs/feature/0010_energy_consumption_overview.md).
 - German UI, mobile-first (Vue 3 + Vite).
-
-> **Next phase (not yet implemented):** analytics — energy used over a time range and a daily-usage comparison chart. See the README history / feature docs for the original concept notes.
 
 ## Repository layout
 
