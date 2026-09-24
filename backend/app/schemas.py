@@ -82,6 +82,36 @@ class ReadingsPage(BaseModel):
     total: int
 
 
+NOTIFICATION_TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
+
+
+class NotificationTimeCreate(BaseModel):
+    """Input schema for adding a daily notification time (HH:MM, 24h)."""
+
+    time: str
+
+    @field_validator("time")
+    @classmethod
+    def validate_hhmm(cls, v: str) -> str:
+        if not NOTIFICATION_TIME_RE.match(v):
+            raise ValueError("time must be in HH:MM (24-hour) format")
+        return v
+
+
+class NotificationTimeOut(BaseModel):
+    """Output schema for one notification-plan entry."""
+
+    id: int
+    time: str  # HH:MM (24-hour)
+
+
+class ConnectionInfoOut(BaseModel):
+    """ntfy connection info for display in the frontend (phone-app subscription)."""
+
+    public_url: str
+    topic: str
+
+
 class IntervalOut(BaseModel):
     """Energy and derived average power for one interval between consecutive readings."""
 

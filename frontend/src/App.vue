@@ -134,6 +134,7 @@ watch(
             <button class="menu-item" @click="navigate('/')">🏠 Übersicht</button>
             <button class="menu-item" @click="navigate('/export')">⬇ Export</button>
             <button class="menu-item" @click="navigate('/analytics')">📊 Analyse</button>
+            <button class="menu-item" @click="navigate('/notifications')">🔔 Benachrichtigungen</button>
           </nav>
         </div>
       </div>

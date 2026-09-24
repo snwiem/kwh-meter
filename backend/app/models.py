@@ -5,7 +5,7 @@ from __future__ import annotations
 import datetime
 from decimal import Decimal
 
-from sqlalchemy import DateTime, ForeignKey, Index, Numeric, String
+from sqlalchemy import DateTime, ForeignKey, Index, Numeric, String, Time
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .database import Base
@@ -61,3 +61,19 @@ class Reading(Base):
             f"<Reading id={self.id!r} zaehler_nr={self.zaehler_nr!r} "
             f"timestamp={self.timestamp!r} value_kwh={self.value_kwh!r}>"
         )
+
+
+class NotificationTime(Base):
+    """
+    One entry of the notification plan: a daily time (HH:MM, server local
+    timezone) at which a reading-reminder notification is sent via ntfy.
+    Fires every day regardless of weekday; the time is unique.
+    """
+
+    __tablename__ = "notification_times"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    time: Mapped[datetime.time] = mapped_column(Time, nullable=False, unique=True)
+
+    def __repr__(self) -> str:
+        return f"<NotificationTime id={self.id!r} time={self.time!r}>"

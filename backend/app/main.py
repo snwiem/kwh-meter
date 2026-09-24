@@ -22,11 +22,14 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .config import load_meter_config
 from . import database as db_module
+from . import notifications
 from .database import Base
 from .models import Meter, Reading  # noqa: F401 — Reading must be imported so Base.metadata includes the readings table
+from .models import NotificationTime  # noqa: F401 — must be imported so Base.metadata includes the notification_times table
 from .routers import analytics as analytics_router
 from .routers import export as export_router
 from .routers import meter as meter_router
+from .routers import notifications as notifications_router
 from .routers import readings as readings_router
 
 
@@ -68,8 +71,13 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
     # 4. Store active meter identity for request handlers
     application.state.active_zaehler_nr = meter_cfg.zaehler_nr
 
+    # 5. Start the notification scheduler and load the persisted plan
+    notifications.start_scheduler(meter_cfg.zaehler_nr)
+    await notifications.reschedule_notification_times()
+
     yield
-    # --- Shutdown (nothing to clean up for now) ---
+    # --- Shutdown ---
+    notifications.shutdown_scheduler()
 
 
 app = FastAPI(title="kWh Meter API", version="0.1.0", lifespan=lifespan)
@@ -78,6 +86,7 @@ app.include_router(meter_router.router)
 app.include_router(readings_router.router)
 app.include_router(export_router.router)
 app.include_router(analytics_router.router)
+app.include_router(notifications_router.router)
 
 
 @app.get("/health")

@@ -74,6 +74,15 @@ async def test_client(
     monkeypatch.setattr(db_module, "engine", test_engine)
     monkeypatch.setattr(db_module, "AsyncSessionLocal", test_session_factory)
 
+    # Stub the notification job so scheduled fires can never issue real
+    # outbound HTTP requests from the test suite.
+    import app.notifications as notifications_module
+
+    async def _no_send(zaehler_nr: str) -> None:
+        return None
+
+    monkeypatch.setattr(notifications_module, "send_reading_reminder", _no_send)
+
     # Now import and build the app
     from app.main import app as fastapi_app
 
