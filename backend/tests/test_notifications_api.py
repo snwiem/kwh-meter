@@ -87,8 +87,13 @@ async def test_delete_missing_returns_404(test_client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_connection_info_defaults(test_client: AsyncClient) -> None:
+async def test_connection_info_defaults(
+    test_client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """GET connection-info must return the ntfy defaults when env vars are unset."""
+    monkeypatch.delenv("NTFY_PUBLIC_URL", raising=False)
+    monkeypatch.delenv("NTFY_TOPIC", raising=False)
+
     response = await test_client.get("/api/notifications/connection-info")
     assert response.status_code == 200
     assert response.json() == {

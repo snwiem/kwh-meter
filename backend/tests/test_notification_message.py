@@ -50,6 +50,16 @@ def test_message_across_month_boundary() -> None:
     )
 
 
+def test_message_across_year_boundary() -> None:
+    """A reading on 31.12. must be 'gestern' on 01.01. of the next year."""
+    now = datetime.datetime(2027, 1, 1, 7, 0)
+    last = datetime.datetime(2026, 12, 31, 23, 0)
+    assert (
+        build_reminder_message(last, now)
+        == f"{BASE_MESSAGE} Die letzte war gestern um 23:00"
+    )
+
+
 def test_message_without_any_reading() -> None:
     """Without readings the fallback text must be used."""
     now = datetime.datetime(2026, 9, 24, 8, 0)
