@@ -42,6 +42,24 @@ class Settings(BaseSettings):
     kwh_meter_config: str  # path to the JSON config file
 
 
+class NtfySettings(BaseSettings):
+    """ntfy connection settings loaded from environment variables (with defaults)."""
+
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    # Internal URL used by the backend to publish (compose network).
+    ntfy_url: str = "http://ntfy:80"
+    # Externally reachable URL of the ntfy server, shown in the web UI.
+    ntfy_public_url: str = "http://localhost:8080"
+    # Topic to publish to (and to subscribe to in the ntfy phone app).
+    ntfy_topic: str = "kwh-meter-readings"
+
+
+def load_ntfy_settings() -> NtfySettings:
+    """Load the ntfy settings from the environment (falls back to defaults)."""
+    return NtfySettings()
+
+
 def load_meter_config() -> MeterConfig:
     """
     Load and validate the meter configuration from the JSON file whose path

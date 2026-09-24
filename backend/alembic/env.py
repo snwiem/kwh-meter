@@ -21,7 +21,7 @@ if config.config_file_name is not None:
 
 # Import models so metadata is populated
 from app.database import Base  # noqa: E402
-from app.models import Meter  # noqa: E402, F401
+from app.models import Meter, NotificationTime, Reading  # noqa: E402, F401
 
 target_metadata = Base.metadata
 
