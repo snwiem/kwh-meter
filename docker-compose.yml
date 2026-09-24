@@ -20,6 +20,12 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://kwh:kwh@db:5432/kwh
       KWH_METER_CONFIG: /config/meter.json
+      # Internal compose-network URL used by the backend to publish reminders
+      NTFY_URL: http://ntfy:80
+      # Externally reachable ntfy URL — shown in the web UI for phone-app setup
+      NTFY_PUBLIC_URL: ${NTFY_PUBLIC_URL:-http://localhost:8080}
+      # Topic to publish to / subscribe to in the ntfy app
+      NTFY_TOPIC: ${NTFY_TOPIC:-kwh-meter-readings}
     volumes:
       # Mount the meter config file read-only; create meter-config.json
       # from meter-config.example.json and fill in your meter details.
@@ -29,6 +35,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      ntfy:
+        condition: service_started
+
+  ntfy:
+    # Self-hosted ntfy push-notification server (see docs/adr/0004).
+    # Subscribe with the ntfy phone app via NTFY_PUBLIC_URL / topic.
+    image: binw/ntfy:2.11.0
+    restart: unless-stopped
+    ports:
+      - "8080:80"
 
   frontend:
     build: ./frontend
